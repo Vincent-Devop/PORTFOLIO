@@ -453,7 +453,7 @@ h1, h2, h3 { font-family: var(--display); }
 @keyframes page-cube-float { 0%, 100% { margin-top: 0; transform: rotateX(58deg) rotateZ(28deg); } 50% { margin-top: 18px; transform: rotateX(66deg) rotateZ(42deg); } }
 @keyframes page-ring-spin { from { transform: rotate(-24deg) rotate(0deg); } to { transform: rotate(-24deg) rotate(360deg); } }
 @keyframes page-node-pulse { 50% { transform: scale(1.45); box-shadow: 0 0 0 14px rgba(217, 237, 130, .08); } }
-.interior-hero { position: relative; overflow: hidden; isolation: isolate; }.interior-hero > *:not(.page-scene) { position: relative; z-index: 2; }
+.interior-hero { position: relative; overflow: hidden; isolation: isolate; }.interior-hero > *:not(.page-scene):not(.interior-hero__environment) { position: relative; z-index: 2; }
 @media (prefers-reduced-motion: reduce) { .page-scene__cube, .page-scene__ring, .page-scene__node { animation: none; } }
 @media (max-width: 680px) {
   .profile-socials .social-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }.profile-socials .social-links a:last-child { grid-column: span 2; }
@@ -721,20 +721,33 @@ h1, h2, h3 { font-family: var(--display); }
 .admin-media-field { display: grid; gap: .65rem; padding: 1rem; background: var(--porcelain); border: 1px solid var(--border); }.admin-media-field small { color: var(--muted); font: .62rem/1.5 var(--mono); }.admin-media-preview { width: 100%; max-height: 180px; display: block; object-fit: cover; border: 1px solid var(--border); background: var(--ink); }.admin-upload-label { display: grid; gap: .45rem; color: var(--purple); font: 600 .68rem var(--mono); cursor: pointer; }.admin-upload-label input { color: var(--muted); font: .65rem var(--mono); }.admin-upload-label input::file-selector-button { margin-right: .65rem; padding: .55rem .7rem; color: var(--white); background: var(--purple); border: 0; border-radius: 4px; font: 600 .62rem var(--mono); cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .project-visual__uploaded-image { transition: none; } }
 
-/* Generated page environments: image provides the atmosphere, existing geometry remains a quiet overlay. */
-.interior-hero__environment { background-position: center; background-size: cover; background-repeat: no-repeat; }
-.interior-hero--about .interior-hero__environment { background-image: url('/manus-storage/async-images/XgIAdwJ0Gf0pQb9pbJJFxN/image-1.webp'); opacity: .92; }
-.interior-hero--expertise .interior-hero__environment { background-image: url('/manus-storage/async-images/XgIAdwJ0Gf0pQb9pbJJFxN/image-2.webp'); opacity: .58; }
-.interior-hero--work .interior-hero__environment { background-image: url('/manus-storage/async-images/XgIAdwJ0Gf0pQb9pbJJFxN/image-3.webp'); opacity: .82; }
-.interior-hero--aurell .interior-hero__environment { background-image: url('/manus-storage/async-images/XgIAdwJ0Gf0pQb9pbJJFxN/image-4.webp'); opacity: .55; }
-.interior-hero--oralcare .interior-hero__environment { background-image: url('/manus-storage/async-images/XgIAdwJ0Gf0pQb9pbJJFxN/image-5.webp'); opacity: .88; }
-.interior-hero--research .interior-hero__environment { background-image: url('/manus-storage/async-images/L75NZnm9IwPWJWRU4v515M/image-1.webp'); opacity: .82; }
-.interior-hero--experience .interior-hero__environment { background-image: url('/manus-storage/async-images/L75NZnm9IwPWJWRU4v515M/image-2.webp'); opacity: .82; }
-.interior-hero--contact .interior-hero__environment { background-image: url('/manus-storage/async-images/L75NZnm9IwPWJWRU4v515M/image-3.webp'); opacity: .68; }
+/* Interior pages use the local cybersecurity and cloud references as full-bleed environments. */
+.interior-hero { color: #f4f7ff; background: #061638; }
+.interior-hero::before { content: ''; position: absolute; z-index: 1; inset: 0 auto 0 0; width: min(68%, 880px); pointer-events: none; background: linear-gradient(90deg, rgba(3, 12, 38, .82), rgba(3, 12, 38, .66)); border-right: 1px solid rgba(200, 220, 255, .28); backdrop-filter: blur(7px); }
+.interior-hero > .interior-hero__environment { position: absolute; z-index: 0; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; opacity: 1; }
+.interior-hero__environment::before, .interior-hero__environment::after { display: none; }
+.interior-hero .page-scene { opacity: .24; }
+.interior-hero .section-label, .interior-hero .section-label span:first-child { color: #d7e5ff; }
+.interior-hero .interior-title em { color: #c4d9ff; }
+.interior-hero .interior-description { color: rgba(245, 248, 255, .86); }
+.interior-hero--about .interior-hero__environment,
+.interior-hero--expertise .interior-hero__environment,
+.interior-hero--aurell .interior-hero__environment,
+.interior-hero--research .interior-hero__environment,
+.interior-hero--systems .interior-hero__environment {
+  background-image: linear-gradient(90deg, rgba(3, 12, 38, .64), rgba(3, 12, 38, .18)), linear-gradient(0deg, rgba(3, 12, 38, .4), transparent 58%), url('/media/cloud-engineering-systems.webp');
+}
+.interior-hero--work .interior-hero__environment,
+.interior-hero--oralcare .interior-hero__environment,
+.interior-hero--experience .interior-hero__environment,
+.interior-hero--contact .interior-hero__environment {
+  background-image: linear-gradient(90deg, rgba(3, 12, 38, .64), rgba(3, 12, 38, .18)), linear-gradient(0deg, rgba(3, 12, 38, .4), transparent 58%), url('/media/cloud-engineering-touch.jpg');
+}
+.app[data-theme='light'] .interior-hero .section-label,
+.app[data-theme='light'] .interior-hero .section-label span:first-child { color: #e2edff; }
 @media (max-width: 680px) {
+  .interior-hero::before { width: 100%; background: rgba(3, 12, 38, .68); border-right: 0; }
   .interior-hero__environment { background-position: 62% center; }
-  .interior-hero--expertise .interior-hero__environment,
-  .interior-hero--contact .interior-hero__environment { opacity: .46; }
 }
 
 /* Discreet private admin access: quiet by default, clear on intentional interaction. */

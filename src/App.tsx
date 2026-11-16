@@ -114,6 +114,7 @@ type RouteLinkProps = {
   className?: string
   style?: CSSProperties
   onClick?: () => void
+  ariaCurrent?: 'page'
 }
 
 const baseUrl = 'https://vincentnyakundi.com'
@@ -124,7 +125,7 @@ function navigate(to: string) {
   window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
 }
 
-function RouteLink({ to, children, className, style, onClick }: RouteLinkProps) {
+function RouteLink({ to, children, className, style, onClick, ariaCurrent }: RouteLinkProps) {
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (to.startsWith('/') && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       event.preventDefault()
@@ -133,7 +134,7 @@ function RouteLink({ to, children, className, style, onClick }: RouteLinkProps) 
     onClick?.()
   }
 
-  return <a className={className} style={style} href={to} onClick={handleClick}>{children}</a>
+  return <a className={className} style={style} href={to} onClick={handleClick} aria-current={ariaCurrent}>{children}</a>
 }
 
 function usePathname() {
@@ -283,21 +284,20 @@ function SiteNav({ pathname, theme, onToggleTheme }: { pathname: string; theme: 
       <RouteLink to="/" className="wordmark" onClick={() => setOpen(false)}>
         <img src="/brand/vincey-cloud-logo.png" alt="Vincent Nyakundi — Cloud Engineer, Cyber Security Analyst, Developer" className="wordmark-logo-final" />
       </RouteLink>
-      <nav className={`desktop-nav ${open ? 'desktop-nav--open' : ''}`} aria-label="Primary navigation">
-        {navItems.map((item) => <RouteLink key={item.href} to={item.href} className={isActive(item.href) ? 'nav-link nav-link--active' : 'nav-link'} onClick={() => setOpen(false)}>{item.label}</RouteLink>)}
+      <nav id="primary-navigation" className={`desktop-nav ${open ? 'desktop-nav--open' : ''}`} aria-label="Primary navigation">
+        {navItems.map((item) => <RouteLink key={item.href} to={item.href} ariaCurrent={isActive(item.href) ? 'page' : undefined} className={isActive(item.href) ? 'nav-link nav-link--active' : 'nav-link'} onClick={() => setOpen(false)}>{item.label}</RouteLink>)}
       </nav>
-      <div className="nav-actions"><a href={cvUrl} download className="nav-cv">Download CV <ArrowDownRight size={14} /></a><Magnetic><RouteLink to="/contact" className="nav-cta" onClick={() => setOpen(false)}>Let&apos;s Talk <ArrowUpRight size={15} /></RouteLink></Magnetic></div>
-      <div className="nav-sidebar-footer">
-        <SocialLinks compact />
-        <div className="nav-sidebar-status"><span className="availability-dot" />Available for opportunities</div>
+      <div className="nav-actions">
         <button className="theme-toggle" type="button" onClick={onToggleTheme} aria-pressed={theme === 'light'} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}<span>{theme === 'dark' ? 'Light theme' : 'Dark theme'}</span>
         </button>
+        <a href={cvUrl} download className="nav-cv">CV <ArrowDownRight size={14} /></a>
+        <Magnetic><RouteLink to="/contact" className="nav-cta" onClick={() => setOpen(false)}>Contact <ArrowUpRight size={15} /></RouteLink></Magnetic>
       </div>
-      <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="primary-navigation" aria-label={open ? 'Close navigation' : 'Open navigation'} onClick={() => setOpen((value) => !value)}>{open ? <X size={21} /> : <Menu size={21} />}</button>
+      <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? 'Close navigation' : 'Open navigation'} onClick={() => setOpen((value) => !value)}>{open ? <X size={21} /> : <Menu size={21} />}</button>
     </div>
-    <div id="primary-navigation" className={`mobile-panel ${open ? 'mobile-panel--open' : ''}`}>
-      {navItems.map((item) => <RouteLink key={item.href} to={item.href} className={isActive(item.href) ? 'mobile-link mobile-link--active' : 'mobile-link'} onClick={() => setOpen(false)}><span>{item.label}</span><ArrowUpRight size={17} /></RouteLink>)}
+    <div id="mobile-navigation" className={`mobile-panel ${open ? 'mobile-panel--open' : ''}`}>
+      {navItems.map((item) => <RouteLink key={item.href} to={item.href} ariaCurrent={isActive(item.href) ? 'page' : undefined} className={isActive(item.href) ? 'mobile-link mobile-link--active' : 'mobile-link'} onClick={() => setOpen(false)}><span>{item.label}</span><ArrowUpRight size={17} /></RouteLink>)}
       <div className="mobile-panel__actions"><a href={cvUrl} download className="button button--text" onClick={() => setOpen(false)}>Download CV <ArrowDownRight size={16} /></a><RouteLink to="/contact" className="button button--primary" onClick={() => setOpen(false)}>Let&apos;s Talk <ArrowUpRight size={16} /></RouteLink></div>
       <button className="mobile-theme-toggle" type="button" onClick={onToggleTheme} aria-pressed={theme === 'light'}>{theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</button>
       <div className="mobile-panel__foot"><span>Available for thoughtful work</span><span className="availability-dot" /></div>
@@ -306,65 +306,71 @@ function SiteNav({ pathname, theme, onToggleTheme }: { pathname: string; theme: 
 }
 
 function EngineeringVisual() {
-  const [pointer, setPointer] = useState({ x: 0, y: 0 })
-  const [isMobile, setIsMobile] = useState(false)
-  const stageRef = useRef<HTMLDivElement>(null)
-  const style = { '--pointer-x': `${pointer.x}px`, '--pointer-y': `${pointer.y}px` } as CSSProperties
-  const moveStage = (x: number, y: number) => { if (stageRef.current) animate(stageRef.current, { transform: `translate3d(${x}px, ${y}px, 0)` }, { duration: .45, ease: 'easeOut' }) }
+  const [webGLEnabled, setWebGLEnabled] = useState(false)
 
   useEffect(() => {
     const query = window.matchMedia('(pointer: coarse), (max-width: 680px)')
-    const update = () => setIsMobile(query.matches)
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setWebGLEnabled(!query.matches && !reducedMotion.matches)
     update()
     query.addEventListener?.('change', update)
-    return () => query.removeEventListener?.('change', update)
+    reducedMotion.addEventListener?.('change', update)
+    return () => {
+      query.removeEventListener?.('change', update)
+      reducedMotion.removeEventListener?.('change', update)
+    }
   }, [])
 
-  return <div className="engineering-visual" style={style} onPointerMove={(event) => {
-    if (isMobile) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = (event.clientX - rect.left - rect.width / 2) / 9
-    const y = (event.clientY - rect.top - rect.height / 2) / 11
-    setPointer({ x, y })
-    moveStage(x, y)
-  }} onPointerLeave={() => { setPointer({ x: 0, y: 0 }); moveStage(0, 0) }} aria-label="Abstract dimensional engineering structure">
-    <div className="visual-coordinate">37° 17′ S / 23° 33′ E</div>
-    <div className="visual-index">SYSTEM / 001</div>
-    {!isMobile && <div className="visual-canvas" aria-hidden="true"><Suspense fallback={null}><ParticleCanvas /></Suspense></div>}
-    <div ref={stageRef} className="visual-stage">
-      <div className="visual-shadow" />
-      <div className="visual-plane visual-plane--back" />
-      <div className="visual-solid" aria-hidden="true"><span className="visual-solid__face visual-solid__face--front" /><span className="visual-solid__face visual-solid__face--side" /><span className="visual-solid__face visual-solid__face--top" /><span className="visual-solid__core" /></div>
-      <div className="visual-ring visual-ring--outer" />
-      <div className="visual-ring visual-ring--inner" />
-      <div className="visual-spine" />
-      <div className="visual-block visual-block--one" />
-      <div className="visual-block visual-block--two" />
-      <div className="visual-block visual-block--three" />
-      <div className="visual-block visual-block--four" />
-      <div className="visual-node visual-node--one" />
-      <div className="visual-node visual-node--two" />
-      <div className="visual-node visual-node--three" />
-      <div className="visual-line visual-line--one" />
-      <div className="visual-line visual-line--two" />
-      <div className="visual-tag">BUILD / THINK / REPEAT</div>
+  return <div className="engineering-visual" role="img" aria-label="Interactive 3D model of cloud infrastructure, network connections, servers, and a security shield">
+    <div className={`visual-canvas ${webGLEnabled ? 'visual-canvas--webgl' : ''}`} aria-hidden="true">
+      <div className="visual-fallback">
+        <div className="visual-fallback__cloud"><Cloud size={48} strokeWidth={1.2} /></div>
+        <div className="visual-fallback__server"><i /><i /><i /></div>
+        <div className="visual-fallback__shield"><ShieldCheck size={34} strokeWidth={1.2} /></div>
+        <span className="visual-fallback__line visual-fallback__line--one" />
+        <span className="visual-fallback__line visual-fallback__line--two" />
+        <span className="visual-fallback__node visual-fallback__node--one" />
+        <span className="visual-fallback__node visual-fallback__node--two" />
+      </div>
+      {webGLEnabled && <Suspense fallback={null}><ParticleCanvas /></Suspense>}
     </div>
-    <div className="visual-caption"><span>Interactive study in structure</span><span>Move through the form</span></div>
+    <span className="visual-coordinate">CLOUD / SECURITY / SOFTWARE</span>
+    <span className="visual-index">SYSTEM STUDY / 001</span>
+    <span className="visual-caption">Pointer-responsive infrastructure study</span>
   </div>
 }
 
 function Hero() {
-  return <section className="hero home-hero section-shell" id="top">
-    <div className="hero-copy reveal reveal--up">
-      <SectionLabel number="00 / 09">Digital engineering &amp; systems</SectionLabel>
-      <p className="eyebrow">Multidisciplinary technologist <span className="eyebrow-rule" /> Nairobi / Kenya</p>
-      <h1 className="kinetic-heading"><span className="kinetic-line" data-delay="0">I turn questions</span><br /><em className="kinetic-line" data-delay=".12">into living systems.</em></h1>
-      <p className="hero-description">I follow the signal beneath the interface — mapping how people, code, infrastructure, and intelligence can work together to make technology feel inevitable.</p>
-      <div className="hero-actions"><Magnetic><RouteLink to="/work" className="button button--primary">Explore my work <ArrowUpRight size={17} /></RouteLink></Magnetic><Magnetic><RouteLink to="/contact" className="button button--text">Let&apos;s connect <ArrowRight size={17} /></RouteLink></Magnetic></div>
-      <div className="hero-foot"><div className="availability"><span className="availability-dot" />Currently building with intention</div><SocialLinks compact /></div>
+  return <section className="studio-hero" id="top">
+    <div className="studio-hero__copy reveal reveal--up">
+      <div className="studio-hero__profile">
+        <figure className="studio-hero__portrait">
+          <picture><source srcSet="/portrait/vincent-nyakundi-luxury.webp" type="image/webp" /><img src="/portrait/vincent-nyakundi-luxury.png" alt="Vincent Nyakundi in a navy double-breasted suit" width="1632" height="2176" fetchPriority="high" /></picture>
+        </figure>
+        <div className="studio-hero__profile-copy">
+          <SectionLabel number="01 / 08">Engineering portfolio / 2026</SectionLabel>
+          <p className="studio-hero__eyebrow"><span className="availability-dot" />Available for thoughtful opportunities <i /> Nairobi, Kenya</p>
+        </div>
+      </div>
+      <h1>Building systems.<br /><em>Securing the future.</em></h1>
+      <p className="studio-hero__introduction">I&apos;m Vincent Nyakundi, a Computer Science student exploring cloud infrastructure, cybersecurity, and software engineering through real projects and deliberate practice.</p>
+      <div className="hero-specializations" aria-label="Core engineering disciplines">
+        <span><Cloud size={16} />Cloud engineering &amp; DevOps</span>
+        <span><ShieldCheck size={16} />Cybersecurity</span>
+        <span><Code2 size={16} />Software engineering</span>
+      </div>
+      <div className="hero-actions">
+        <Magnetic><RouteLink to="/work" className="button button--primary">Explore My Work <ArrowUpRight size={17} /></RouteLink></Magnetic>
+        <Magnetic><RouteLink to="/contact" className="button button--text">Contact Me <ArrowRight size={17} /></RouteLink></Magnetic>
+      </div>
+      <p className="studio-hero__footnote">SOFTWARE / INFRASTRUCTURE / DEFENSIVE SECURITY</p>
     </div>
-    <div className="hero-art reveal reveal--scale"><HeroCollage /></div>
-    <div className="hero-scroll"><span>Scroll to inspect</span><ArrowDownRight size={17} /></div>
+    <div className="studio-hero__visual reveal reveal--scale">
+      <div className="studio-hero__visual-heading"><span>INTERACTIVE SYSTEM STUDY</span><span>01 — CLOUD / TRUST</span></div>
+      <EngineeringVisual />
+      <div className="studio-hero__visual-footer"><span>Infrastructure is a network of decisions.</span><span>MOVE POINTER TO EXPLORE</span></div>
+    </div>
+    <span className="studio-hero__index" aria-hidden="true">VINCEY / 01—08</span>
   </section>
 }
 
@@ -521,10 +527,38 @@ function HeroCollage() {
 
 function WorkPreview({ compact = false }: { compact?: boolean }) {
   const { projects } = usePortfolioContent()
-  return <section className={`work-section section-shell ${compact ? 'work-section--compact' : ''}`} id="work"><MotionGraphicField />
-    <div className="section-heading reveal reveal--up"><div><SectionLabel number="02 / 09">Selected work</SectionLabel><h2>Systems with a point of view.</h2></div><p>Projects are documented honestly: what is live, what is being shaped, and what the decisions reveal.</p></div>
-    <div className="project-rail-wrap"><div className="project-rail" tabIndex={0} aria-label="Selected projects. Use arrow keys to move between projects." onKeyDown={(event) => { if (event.key === 'ArrowRight') event.currentTarget.scrollBy({ left: 360, behavior: 'smooth' }); if (event.key === 'ArrowLeft') event.currentTarget.scrollBy({ left: -360, behavior: 'smooth' }) }}>{projects.map((project, index) => <article className="project-card reveal reveal--up" key={project.slug} style={{ '--delay': `${index * 90}ms` } as CSSProperties}><ProjectVisual project={project} /><div className="project-card__body"><div className="project-card__meta"><span>{project.kicker}</span><StatusPill status={project.status} /></div><h3>{project.title}</h3><p>{project.description}</p><div className="project-card__foot"><span>{project.stack.slice(0, 2).join(' / ')}</span><RouteLink to={`/work/${project.slug}`} className="arrow-link">View case study <ArrowUpRight size={16} /></RouteLink></div></div></article>)}</div></div>
-    {!compact && <div className="work-section__footer"><span>01—02 / Drag, swipe or use arrow keys</span><RouteLink to="/work" className="text-link">View all work <ArrowRight size={16} /></RouteLink></div>}
+  return <section className={`work-section section-shell ${compact ? 'work-section--compact' : ''}`} id="work">
+    <div className="section-heading reveal reveal--up"><div><SectionLabel number="02 / 08">Selected engineering</SectionLabel><h2>Work with a reason to exist.</h2></div><p>Live work and active builds, documented with their real constraints, architecture, and status.</p></div>
+    <div className="selected-projects">{projects.map((project, index) => {
+      const githubResource = project.resources.find((resource) => resource.href.includes('github.com'))
+      return <article className="project-card project-card--editorial reveal reveal--up" key={project.slug} style={{ '--delay': `${index * 100}ms` } as CSSProperties}>
+        <div className="project-card__visual"><ProjectVisual project={project} /><span className="project-card__visual-index">0{index + 1} / ENGINEERING CASE</span></div>
+        <div className="project-card__body">
+          <div className="project-card__meta"><span>{project.kicker}</span><StatusPill status={project.status} /></div>
+          <h3>{project.title}</h3>
+          <p className="project-card__summary">{project.description}</p>
+          <div className="project-card__facts">
+            <div><span>PROBLEM</span><p>{project.problem}</p></div>
+            <div><span>ARCHITECTURE</span><p>{project.architecture}</p></div>
+            <div><span>ENGINEERING CONTRIBUTION</span><ul>{project.implementation.slice(0, 2).map((item) => <li key={item}>{item}</li>)}</ul></div>
+          </div>
+          <div className="project-card__stack" aria-label={`${project.title} technologies and focus areas`}>{project.stack.map((item) => <span key={item}>{item}</span>)}</div>
+          <div className="project-card__links">
+            <RouteLink to={`/work/${project.slug}`} className="text-link">Explore case study <ArrowUpRight size={16} /></RouteLink>
+            {project.liveUrl && <a href={project.liveUrl} className="text-link" target="_blank" rel="noreferrer">Live project <ArrowUpRight size={16} /></a>}
+            {githubResource && <a href={githubResource.href} className="text-link" target="_blank" rel="noreferrer">GitHub <ArrowUpRight size={16} /></a>}
+          </div>
+        </div>
+      </article>
+    })}{!projects.some((project) => project.slug === 'cpms') && <article className="project-card project-card--editorial project-card--pending reveal reveal--up">
+      <div className="project-card__body">
+        <div className="project-card__meta"><span>CAR PARKING MANAGEMENT SYSTEM</span><span className="project-info-needed">PROJECT DETAILS NEEDED</span></div>
+        <h3>CPMS</h3>
+        <p className="project-card__summary">Further project context has not been recorded for publication yet. Share the implementation details to add an accurate case study.</p>
+        <div className="project-card__facts"><div><span>PUBLICATION NOTE</span><p>No project status, architecture, technology stack, engineering contribution, or external links are documented here, so none are assumed.</p></div></div>
+      </div>
+    </article>}</div>
+    {!compact && <div className="work-section__footer"><span>{projects.some((project) => project.slug === 'cpms') ? `${String(projects.length).padStart(2, '0')} documented project records` : `${String(projects.length).padStart(2, '0')} documented records / CPMS awaits project context`}</span><RouteLink to="/work" className="text-link">View all work <ArrowRight size={16} /></RouteLink></div>}
   </section>
 }
 
@@ -536,27 +570,45 @@ function SystemTelemetry() {
 function SystemMap() {
   const { editorial } = usePortfolioContent()
   const [selected, setSelected] = useState(editorial.systemNodes[0])
-  return <section className="system-map-section section-shell section-shell--full" id="system-map"><div className="system-map-inner"><div className="section-heading section-heading--light reveal reveal--up"><div><SectionLabel number="03 / 09" tone="light">System map</SectionLabel><h2>Five ways<br />into the system.</h2></div><p>Select a node to see the question, tools, and project behind the lens. Nothing here is a percentage — it is a way of working.</p></div><div className="system-map-layout"><div className="system-map-visual" aria-label="Interactive map of Vincent's technical interests"><div className="system-map-orbit system-map-orbit--outer" /><div className="system-map-orbit system-map-orbit--inner" /><div className="system-map-center"><span>VINCEY</span><strong>build / question / repeat</strong></div>{editorial.systemNodes.map((node, index) => { const angle = (index / editorial.systemNodes.length) * Math.PI * 2 - Math.PI / 2; const x = 50 + Math.cos(angle) * 39; const y = 50 + Math.sin(angle) * 39; return <button key={node.id} type="button" className={`system-node ${selected.id === node.id ? 'system-node--active' : ''}`} style={{ left: `${x}%`, top: `${y}%` }} onClick={() => setSelected(node)}><span>0{index + 1}</span>{node.title}</button> })}</div><div className="system-map-detail reveal reveal--scale"><div className="system-map-detail__top"><span>SELECTED LENS / {selected.id.toUpperCase()}</span><span>{selected.project}</span></div><h3>{selected.title}</h3><p className="system-map-detail__short">{selected.short}</p><div className="system-map-detail__columns"><div><span>TOOLS / TECHNOLOGIES</span><div className="system-tool-list">{selected.tools.map((tool) => <b key={tool}>{tool}</b>)}</div></div><div><span>ENGINEERING QUESTION</span><p>{selected.question}</p></div></div><div className="system-map-detail__approach"><span>APPROACH</span><p>{selected.approach}</p></div></div></div></div></section>
+  const securityStudy = editorial.systemNodes.find((node) => node.id === 'security')
+  return <section className="system-map-section section-shell" id="laboratory"><div className="system-map-inner">
+    <div className="section-heading reveal reveal--up"><div><SectionLabel number="04 / 08">Technical laboratory</SectionLabel><h2>Make the system<br /><em>legible.</em></h2></div><p>Interactive lenses into the questions, tools, and trade-offs behind engineering work. The workflow below is illustrative, not a claim about a production deployment.</p></div>
+    <div className="system-map-layout">
+      <div className="system-map-visual" aria-label="Interactive map of engineering domains">
+        <div className="system-map-orbit system-map-orbit--outer" /><div className="system-map-orbit system-map-orbit--inner" />
+        <div className="system-map-center"><span>VINCEY</span><strong>observe / model / build</strong></div>
+        {editorial.systemNodes.map((node, index) => { const angle = (index / editorial.systemNodes.length) * Math.PI * 2 - Math.PI / 2; const x = 50 + Math.cos(angle) * 39; const y = 50 + Math.sin(angle) * 39; return <button key={node.id} type="button" aria-pressed={selected.id === node.id} className={`system-node ${selected.id === node.id ? 'system-node--active' : ''}`} style={{ left: `${x}%`, top: `${y}%` }} onClick={() => setSelected(node)}><span>0{index + 1}</span>{node.title}</button> })}
+      </div>
+      <div className="system-map-detail reveal reveal--scale"><div className="system-map-detail__top"><span>SELECTED LENS / {selected.id.toUpperCase()}</span><span>{selected.project}</span></div><h3>{selected.title}</h3><p className="system-map-detail__short">{selected.short}</p><div className="system-map-detail__columns"><div><span>TOOLS / TECHNOLOGIES</span><div className="system-tool-list">{selected.tools.map((tool) => <b key={tool}>{tool}</b>)}</div></div><div><span>ENGINEERING QUESTION</span><p>{selected.question}</p></div></div><div className="system-map-detail__approach"><span>APPROACH</span><p>{selected.approach}</p></div></div>
+    </div>
+    <div className="lab-workflow">
+      <div className="lab-workflow__heading"><div><span>ILLUSTRATIVE DELIVERY PATH</span><h3>From environment to release.</h3></div><p>Conceptual flow using tools already listed in the portfolio; not tied to a specific project or production stack.</p></div>
+      <ol>{[['Linux', 'Environment'], ['Docker', 'Service boundary'], ['Neon', 'Managed data'], ['Deployment', 'Release']].map(([tool, purpose], index) => <li key={tool}><span>0{index + 1}</span><strong>{tool}</strong><small>{purpose}</small>{index < 3 && <i aria-hidden="true">→</i>}</li>)}</ol>
+    </div>
+    {securityStudy && <aside className="lab-security-study"><span>SECURITY STUDY / DEFENSIVE QUESTION</span><h3>{securityStudy.question}</h3><p>{securityStudy.approach}</p><small>Study prompt only — no vulnerability test or outcome is claimed here.</small></aside>}
+  </div></section>
 }
 
 function BuildState({ project }: { project: Project }) {
   const { editorial } = usePortfolioContent()
-  const states = editorial.buildStates[project.slug as keyof typeof editorial.buildStates] || editorial.buildStates.aurell
+  const stateKey = project.slug === 'oralcare-plus' ? 'oralcare' : project.slug
+  const states = editorial.buildStates[stateKey as keyof typeof editorial.buildStates]
   const [active, setActive] = useState(0)
   const timelineRef = useRef<HTMLElement>(null)
-  const state = states[active]
+  const state = states?.[active]
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce), (max-width: 680px)').matches || !timelineRef.current) return
+    if (!states || window.matchMedia('(prefers-reduced-motion: reduce), (max-width: 680px)').matches || !timelineRef.current) return
     const buttons = timelineRef.current.querySelectorAll('button')
     const context = gsap.context(() => gsap.to(buttons, { opacity: .34, stagger: .08, scrollTrigger: { trigger: timelineRef.current, start: 'top 24%', end: 'bottom 70%', scrub: 1, onUpdate: (trigger) => { const index = Math.min(states.length - 1, Math.floor(trigger.progress * states.length)); setActive(index) } } }), timelineRef)
     return () => context.revert()
-  }, [project.slug, states.length])
+  }, [project.slug, states?.length])
+  if (!states || !state) return <aside className="build-state build-state--empty">Project-specific build notes have not been added yet.</aside>
   return <section ref={timelineRef} className={`build-state build-state--${project.slug}`} id="build-state"><div className="build-state__head"><span>BUILD STATE / {project.title}</span><span>0{active + 1} / 0{states.length}</span></div><div className="build-state__rail">{states.map((item, index) => <button key={item.label} type="button" className={index === active ? 'is-active' : ''} onClick={() => setActive(index)}><small>0{index + 1}</small><span>{item.label}</span></button>)}</div><div className="build-state__content"><div><span>WHAT IS KNOWN</span><p>{state.known}</p></div><div><span>WHAT IS BUILT</span><p>{state.built}</p></div><div><span>WHAT REMAINS OPEN</span><p>{state.open}</p></div></div></section>
 }
 
 function EngineeringDecisionLog() {
   const { editorial } = usePortfolioContent()
-  return <section className="decision-log section-shell" id="decisions"><div className="section-heading reveal reveal--up"><div><SectionLabel number="04 / 09">Under the surface</SectionLabel><h2>Decisions<br /><em>with receipts.</em></h2></div><p>The work becomes more useful when the alternatives, trade-offs, and uncertainty stay visible.</p></div><div className="decision-list">{editorial.decisions.map((decision, index) => <article className="decision-entry reveal reveal--up" key={decision.title} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="decision-entry__index">0{index + 1}</div><div><span className="decision-entry__tag">{decision.tag}</span><h3>{decision.title}</h3><div className="decision-entry__grid"><p><b>ALTERNATIVES</b>{decision.alternatives}</p><p><b>WHY THIS PATH</b>{decision.why}</p><p><b>STILL UNCERTAIN</b>{decision.uncertain}</p></div></div></article>)}</div></section>
+  return <section className="decision-log section-shell" id="decisions"><div className="section-heading reveal reveal--up"><div><SectionLabel number="05 / 08">Engineering decisions</SectionLabel><h2>Decisions<br /><em>with receipts.</em></h2></div><p>The work becomes more useful when the alternatives, trade-offs, and uncertainty stay visible.</p></div><div className="decision-list">{editorial.decisions.map((decision, index) => <article className="decision-entry reveal reveal--up" key={decision.title} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="decision-entry__index">0{index + 1}</div><div><span className="decision-entry__tag">{decision.tag}</span><h3>{decision.title}</h3><div className="decision-entry__grid"><p><b>ALTERNATIVES</b>{decision.alternatives}</p><p><b>WHY THIS PATH</b>{decision.why}</p><p><b>STILL UNCERTAIN</b>{decision.uncertain}</p></div></div></article>)}</div></section>
 }
 
 function IntentFilters() {
@@ -564,23 +616,23 @@ function IntentFilters() {
   const { editorial } = usePortfolioContent()
   const [active, setActive] = useState(editorial.intentFilters[0])
   const matches = projects.filter((project) => active.projects.includes(project.slug))
-  return <section className="intent-filters section-shell" id="find-your-path"><div className="section-heading reveal reveal--up"><div><SectionLabel number="02 / 09">Find your path</SectionLabel><h2>Start with<br /><em>the question.</em></h2></div><p>Choose the reason you arrived. The work will meet you there.</p></div><div className="intent-filter-layout"><div className="intent-questions">{editorial.intentFilters.map((filter) => <button key={filter.id} type="button" className={active.id === filter.id ? 'is-active' : ''} onClick={() => setActive(filter)}>{filter.label}<ArrowUpRight size={16} /></button>)}</div><div className="intent-results"><span>THE SYSTEM SUGGESTS</span>{matches.map((project) => <RouteLink key={project.slug} to={`/work/${project.slug}`}><strong>{project.title}</strong><small>{project.kicker} / {project.status}</small><ArrowUpRight size={18} /></RouteLink>)}</div></div></section>
+  return <section className="intent-filters section-shell" id="find-your-path"><div className="section-heading reveal reveal--up"><div><SectionLabel number="02 / 08">Find your path</SectionLabel><h2>Start with<br /><em>the question.</em></h2></div><p>Choose the reason you arrived. The work will meet you there.</p></div><div className="intent-filter-layout"><div className="intent-questions">{editorial.intentFilters.map((filter) => <button key={filter.id} type="button" className={active.id === filter.id ? 'is-active' : ''} onClick={() => setActive(filter)}>{filter.label}<ArrowUpRight size={16} /></button>)}</div><div className="intent-results"><span>THE SYSTEM SUGGESTS</span>{matches.map((project) => <RouteLink key={project.slug} to={`/work/${project.slug}`}><strong>{project.title}</strong><small>{project.kicker} / {project.status}</small><ArrowUpRight size={18} /></RouteLink>)}</div></div></section>
 }
 
 function AskTheSystem() {
   const { editorial } = usePortfolioContent()
   const [selected, setSelected] = useState(0)
-  return <section className="ask-system section-shell"><div className="ask-system__inner"><div><SectionLabel number="05 / 09" tone="light">Ask the system</SectionLabel><h2>A small answer<br /><em>from the field.</em></h2><p>Not a chatbot. Four curated doors into how Vincent is thinking, building, and learning.</p></div><div className="ask-system__answers"><div className="ask-system__questions">{editorial.systemAnswers.map(([question], index) => <button key={question} type="button" className={selected === index ? 'is-active' : ''} onClick={() => setSelected(index)}>{question}</button>)}</div><div className="ask-system__response"><span>VINCEY / RESPONSE 0{selected + 1}</span><p>{editorial.systemAnswers[selected][1]}</p></div></div></div></section>
+  return <section className="ask-system section-shell"><div className="ask-system__inner"><div><SectionLabel number="07 / 08" tone="light">Ask the system</SectionLabel><h2>A small answer<br /><em>from the field.</em></h2><p>Not a chatbot. Four curated doors into how Vincent is thinking, building, and learning.</p></div><div className="ask-system__answers"><div className="ask-system__questions">{editorial.systemAnswers.map(([question], index) => <button key={question} type="button" className={selected === index ? 'is-active' : ''} onClick={() => setSelected(index)}>{question}</button>)}</div><div className="ask-system__response"><span>VINCEY / RESPONSE 0{selected + 1}</span><p>{editorial.systemAnswers[selected][1]}</p></div></div></div></section>
 }
 
 function ResearchNotebook() {
   const { editorial } = usePortfolioContent()
-  return <section className="notebook-section section-shell" id="notebook"><div className="section-heading reveal reveal--up"><div><SectionLabel number="05 / 09">Research notebook</SectionLabel><h2>Questions that<br /><em>change the build.</em></h2></div><p>A living shelf for observations, experiments, and open questions — not a list of invented publications.</p></div><div className="notebook-grid">{editorial.notebookEntries.map((entry) => <article className="notebook-entry reveal reveal--up" key={entry.id}><div className="notebook-entry__top"><span>FIELD NOTE {entry.id}</span><span>{entry.type}</span></div><h3>{entry.title}</h3><p>{entry.body}</p><div><span>WHAT CHANGED</span><p>{entry.changed}</p></div><div><span>OPEN QUESTION</span><p>{entry.open}</p></div></article>)}</div></section>
+  return <section className="notebook-section section-shell" id="notebook"><div className="section-heading reveal reveal--up"><div><SectionLabel number="07 / 08">Research notebook</SectionLabel><h2>Questions that<br /><em>change the build.</em></h2></div><p>A living shelf for observations, experiments, and open questions — not a list of invented publications.</p></div><div className="notebook-grid">{editorial.notebookEntries.map((entry) => <article className="notebook-entry reveal reveal--up" key={entry.id}><div className="notebook-entry__top"><span>FIELD NOTE {entry.id}</span><span>{entry.type}</span></div><h3>{entry.title}</h3><p>{entry.body}</p><div><span>WHAT CHANGED</span><p>{entry.changed}</p></div><div><span>OPEN QUESTION</span><p>{entry.open}</p></div></article>)}</div></section>
 }
 
 function LearningTriad() {
   const { editorial } = usePortfolioContent()
-  return <section className="learning-triad section-shell"><div className="learning-triad__head"><SectionLabel number="06 / 09">Direction of travel</SectionLabel><h2>Not only what I&apos;ve done.<br /><em>What I&apos;m becoming.</em></h2></div><div className="learning-triad__grid">{editorial.learningTriad.map(([label, text], index) => <article key={label} className={`learning-card learning-card--${index + 1}`}><span>0{index + 1} / {label}</span><p>{text}</p></article>)}</div></section>
+  return <section className="learning-triad section-shell"><div className="learning-triad__head"><SectionLabel number="07 / 08">Direction of travel</SectionLabel><h2>Not only what I&apos;ve done.<br /><em>What I&apos;m becoming.</em></h2></div><div className="learning-triad__grid">{editorial.learningTriad.map(([label, text], index) => <article key={label} className={`learning-card learning-card--${index + 1}`}><span>0{index + 1} / {label}</span><p>{text}</p></article>)}</div></section>
 }
 
 function ProjectArtifact({ project }: { project: Project }) {
@@ -588,10 +640,28 @@ function ProjectArtifact({ project }: { project: Project }) {
   return <div className={`project-artifact project-artifact--${project.slug}`}><div className="project-artifact__geometry" aria-hidden="true"><i /><b /><span /></div><div className="project-artifact__head"><span>INTERACTIVE ARTIFACT</span><span>{project.slug === 'aurell' ? 'EVENT TRACE' : 'PATIENT JOURNEY'}</span></div><div className="project-artifact__flow">{steps.map((step, index) => <div key={step} className="artifact-step"><span>0{index + 1}</span><strong>{step}</strong>{index < steps.length - 1 && <i />}</div>)}</div><p>{project.slug === 'aurell' ? 'A durable record becomes more useful when the event that changed it can still be followed.' : 'A clear path lets a patient move from uncertainty to a next step without learning the clinic’s internal structure.'}</p></div>
 }
 
+function SkillsArchitecture() {
+  const { expertise, projects } = usePortfolioContent()
+  return <section className="skills-architecture section-shell" id="architecture">
+    <div className="section-heading reveal reveal--up"><div><SectionLabel number="05 / 08">Technical skills &amp; architecture</SectionLabel><h2>Make the boundaries<br /><em>visible.</em></h2></div><p>Current skills and the system models they inform — with unfinished work kept clearly in progress.</p></div>
+    <div className="skills-architecture__layout">
+      <div className="skills-architecture__domains">{expertise.slice(0, 3).map((domain) => <article key={domain.index}>
+        <span>{domain.index} / {domain.title.toUpperCase()}</span><p>{domain.description}</p><div>{domain.skills.map((skill) => <b key={skill}>{skill}</b>)}</div>
+      </article>)}</div>
+      <div className="skills-architecture__models">{projects.map((project) => <article className="architecture-model" key={project.slug}>
+        <div className="architecture-model__heading"><span>{project.kicker}</span><StatusPill status={project.status} /></div>
+        <h3>{project.title} / System model</h3>
+        <p>{project.architecture}</p>
+        <ProjectArtifact project={project} />
+      </article>)}</div>
+    </div>
+  </section>
+}
+
 function ExpertiseSection() {
   const { expertise } = usePortfolioContent()
   const icons = [Code2, Cloud, ShieldCheck, Terminal]
-  return <section className="expertise-section section-shell section-shell--full" id="expertise"><MotionGraphicField /><div className="expertise-inner"><div className="section-heading section-heading--light reveal reveal--up"><div><SectionLabel number="03 / 09" tone="light">Technical expertise</SectionLabel><h2>Four ways into<br />the system.</h2></div><p>Not a list of percentages. A set of working lenses, grounded in building, testing, and staying curious.</p></div><div className="expertise-list">{expertise.map((item, index) => { const Icon = icons[index]; return <article className="expertise-item reveal reveal--up" key={item.title} style={{ '--delay': `${index * 70}ms` } as CSSProperties}><div className="expertise-item__top"><span>{item.index}</span><Icon size={22} strokeWidth={1.5} /></div><div><h3>{item.title}</h3><p>{item.description}</p><div className="skill-list">{item.skills.map((skill) => <span key={skill}>{skill}</span>)}</div></div><ArrowUpRight size={20} className="expertise-item__arrow" /></article> })}</div></div></section>
+  return <section className="expertise-section section-shell" id="expertise"><div className="expertise-inner"><div className="section-heading section-heading--light reveal reveal--up"><div><SectionLabel number="03 / 08" tone="light">Engineering domains</SectionLabel><h2>Build it.<br />Secure it.<br />Deliver it.</h2></div><p>Three core disciplines, grounded in projects, study, and deliberate practice. Intelligent systems remain an adjacent area of exploration.</p></div><div className="expertise-list">{expertise.map((item, index) => { const Icon = icons[index] ?? Terminal; return <article className="expertise-item reveal reveal--up" key={item.title} style={{ '--delay': `${index * 70}ms` } as CSSProperties}><div className="expertise-item__top"><span>{item.index}</span><Icon size={22} strokeWidth={1.5} /></div><div><h3>{item.title}</h3><p>{item.description}</p><div className="skill-list">{item.skills.map((skill) => <span key={skill}>{skill}</span>)}</div></div><ArrowUpRight size={20} className="expertise-item__arrow" /></article> })}</div></div></section>
 }
 
 function PhilosophyMotion() {
@@ -633,12 +703,12 @@ function PhilosophySection() {
 
 function ResearchSection() {
   const { researchNotes } = usePortfolioContent()
-  return <section className="research-section section-shell" id="research"><MotionGraphicField /><div className="section-heading reveal reveal--up"><div><SectionLabel number="05 / 09">Research &amp; exploration</SectionLabel><h2>Still becoming.</h2></div><p>A growing shelf for technical notes, experiments, prototypes, and lessons from projects. No invented publications — only work that earns its way here.</p></div><div className="research-grid">{researchNotes.map((note, index) => <RouteLink to={`/research/${note.slug}`} className="research-card reveal reveal--up" key={note.slug} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="research-card__meta"><span>{note.label}</span><ArrowUpRight size={18} /></div><h3>{note.title}</h3><p>{note.description}</p><span className="research-card__index">0{index + 1}</span></RouteLink>)}</div></section>
+  return <section className="research-section section-shell" id="research"><MotionGraphicField /><div className="section-heading reveal reveal--up"><div><SectionLabel number="07 / 08">Research &amp; interests</SectionLabel><h2>Still becoming.</h2></div><p>A growing shelf for technical notes, experiments, prototypes, and lessons from projects. No invented publications — only work that earns its way here.</p></div><div className="research-grid">{researchNotes.map((note, index) => <RouteLink to={`/research/${note.slug}`} className="research-card reveal reveal--up" key={note.slug} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="research-card__meta"><span>{note.label}</span><ArrowUpRight size={18} /></div><h3>{note.title}</h3><p>{note.description}</p><span className="research-card__index">0{index + 1}</span></RouteLink>)}</div></section>
 }
 
 function ExperienceSection() {
   const { experience } = usePortfolioContent()
-  return <section className="experience-section section-shell" id="experience"><MotionGraphicField /><div className="section-heading reveal reveal--up"><div><SectionLabel number="06 / 09">Experience &amp; education</SectionLabel><h2>A timeline in motion.</h2></div><p>Education, independent work, and active builds — separated clearly so the story stays accurate.</p></div><div className="timeline">{experience.map((item, index) => <div className="timeline-item reveal reveal--up" key={item.title} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="timeline-marker"><span>{item.year}</span><i /></div><div className="timeline-copy"><span className="timeline-type">{item.type}</span><h3>{item.title}</h3><strong>{item.organization}</strong><p>{item.description}</p></div></div>)}</div><RouteLink to="/experience" className="text-link reveal reveal--up">View the full timeline <ArrowRight size={16} /></RouteLink></section>
+  return <section className="experience-section section-shell" id="experience"><MotionGraphicField /><div className="section-heading reveal reveal--up"><div><SectionLabel number="06 / 08">Engineering journey</SectionLabel><h2>A timeline in motion.</h2></div><p>Education, independent work, and active builds — separated clearly so the story stays accurate.</p></div><div className="timeline">{experience.map((item, index) => <div className="timeline-item reveal reveal--up" key={item.title} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="timeline-marker"><span>{item.year}</span><i /></div><div className="timeline-copy"><span className="timeline-type">{item.type}</span><h3>{item.title}</h3><strong>{item.organization}</strong><p>{item.description}</p></div></div>)}</div><RouteLink to="/experience" className="text-link reveal reveal--up">View the full timeline <ArrowRight size={16} /></RouteLink></section>
 }
 
 function ContactSection() {
@@ -669,7 +739,7 @@ function ContactSection() {
   return <section className="contact-section section-shell section-shell--full" id="contact"><MotionGraphicField tone="purple" />
     <div className="contact-inner">
       <div className="contact-copy reveal reveal--up">
-        <SectionLabel number="07 / 09" tone="light">Contact</SectionLabel>
+        <SectionLabel number="08 / 08" tone="light">Contact</SectionLabel>
         <h2>Have an idea<br /><span>worth engineering?</span></h2>
         <p>Let&apos;s discuss software, infrastructure, research, or an opportunity to collaborate.</p>
         <SocialLinks />
@@ -705,11 +775,48 @@ function Footer() {
 }
 
 function HomePage() {
-  return <><PortraitIntroduction /><SystemTelemetry /><IntroSection /><ProjectGallery /><IntentFilters /><Hero /><WorkPreview /><SystemMap /><EngineeringDecisionLog /><PhilosophySection /><AskTheSystem /><ResearchSection /><ResearchNotebook /><LearningTriad /><ExperienceSection /><ContactSection /></>
+  return <><Hero /><SystemTelemetry /><WorkPreview /><IntentFilters /><ExpertiseSection /><SystemMap /><SkillsArchitecture /><EngineeringDecisionLog /><ExperienceSection /><ResearchSection /><ResearchNotebook /><AskTheSystem /><LearningTriad /><ContactSection /></>
 }
 
-function InteriorHero({ label, number, title, description, scene = 'systems' }: { label: string; number: string; title: ReactNode; description: string; scene?: string }) {
-  return <section className={`interior-hero interior-hero--${scene} section-shell`}><div className={`page-scene page-scene--${scene}`} aria-hidden="true"><span className="page-scene__cube page-scene__cube--one" /><span className="page-scene__cube page-scene__cube--two" /><span className="page-scene__ring" /><span className="page-scene__node" /></div><div className="interior-hero__environment" aria-hidden="true" /><SectionLabel number={number}>{label}</SectionLabel><h1 className="interior-title reveal reveal--up">{title}</h1><p className="interior-description reveal reveal--up">{description}</p></section>
+const interiorHeroImages: Record<string, { src: string; alt: string }> = {
+  about: { src: '/media/interior-about-security.webp', alt: 'Close view of a circuit board used in secure computing' },
+  expertise: { src: '/media/interior-expertise-cloud.webp', alt: 'Networked server racks in a data center' },
+  work: { src: '/media/interior-work-software.webp', alt: 'Software code displayed on a laptop workstation' },
+  aurell: { src: '/media/interior-aurell-analytics.webp', alt: 'Business analytics dashboard on a laptop' },
+  oralcare: { src: '/media/interior-oralcare-dental.webp', alt: 'Dental care in a clinical setting' },
+  research: { src: '/media/interior-research-robotics.webp', alt: 'Research robot with illuminated sensors' },
+  systems: { src: '/media/interior-research-notes-hardware.webp', alt: 'Close view of a computer motherboard' },
+  researchNetwork: { src: '/media/interior-research-network.webp', alt: 'Network patch panel and connected cables' },
+  experience: { src: '/media/interior-experience-collaboration.webp', alt: 'Engineers collaborating around laptops' },
+  contact: { src: '/media/interior-contact-network.webp', alt: 'Earth at night with connected city lights' },
+  presentations: { src: '/media/interior-presentations-speaking.webp', alt: 'Microphone at a live presentation' },
+}
+
+function InteriorHero({ label, number, title, description, scene = 'systems', image }: { label: string; number: string; title: ReactNode; description: string; scene?: string; image?: { src: string; alt: string } }) {
+  const heroImage = image ?? interiorHeroImages[scene] ?? interiorHeroImages.systems
+  return <section className={`interior-hero interior-hero--${scene} section-shell`}>
+    <div className={`page-scene page-scene--${scene}`} aria-hidden="true"><span className="page-scene__cube page-scene__cube--one" /><span className="page-scene__cube page-scene__cube--two" /><span className="page-scene__ring" /><span className="page-scene__node" /></div>
+    <div className="interior-hero__copy">
+      <SectionLabel number={number}>{label}</SectionLabel>
+      <h1 className="interior-title reveal reveal--up">{title}</h1>
+      <p className="interior-description reveal reveal--up">{description}</p>
+    </div>
+    <figure className="interior-hero__visual reveal reveal--scale">
+      <img src={heroImage.src} alt={heroImage.alt} width="800" height="900" fetchPriority="high" />
+      <svg className="interior-hero__visual-network" viewBox="0 0 640 520" aria-hidden="true" focusable="false">
+        <path d="M72 183 211 102l138 87 160-82M211 102v230l138-143 142 175M349 189l177 57" />
+        <circle cx="72" cy="183" r="7" />
+        <circle cx="211" cy="102" r="8" />
+        <circle cx="211" cy="332" r="6" />
+        <circle cx="349" cy="189" r="9" />
+        <circle cx="509" cy="107" r="7" />
+        <circle cx="491" cy="364" r="8" />
+        <circle cx="526" cy="246" r="6" />
+      </svg>
+      <div className="interior-hero__visual-heading"><span>CLOUD / SECURITY / SOFTWARE</span><span>FIELD STUDY / {number}</span></div>
+      <figcaption className="interior-hero__visual-caption"><span>{scene.toUpperCase()} / SYSTEMS</span><span>Infrastructure is a network of decisions.</span></figcaption>
+    </figure>
+  </section>
 }
 
 function AboutPage() {
@@ -738,7 +845,7 @@ function ResearchPage() {
 }
 
 function ResearchDetailPage({ note }: { note: typeof fallbackResearchNotes[number] }) {
-  return <><InteriorHero label={note.label} number="04 / 06" title={<>A note on<br /><em>{note.title.toLowerCase()}</em></>} description={note.description} /><section className="research-detail section-shell"><div className="research-detail__aside"><span>FIELD NOTE</span><span>VINCEY / 2026</span></div><article><p className="lead-paragraph">This page is a placeholder for a genuine research note. The structure is ready for a technical essay, a prototype log, or a documented lesson from a project.</p><p>When the material is ready, it will explain the question, the working hypothesis, the implementation or investigation, what changed along the way, and what remains unresolved.</p><RouteLink to="/research" className="text-link">Back to research <ArrowRight size={16} /></RouteLink></article></section></>
+  return <><InteriorHero image={note.slug === 'systems-in-progress' ? interiorHeroImages.systems : interiorHeroImages.researchNetwork} label={note.label} number="04 / 06" title={<>A note on<br /><em>{note.title.toLowerCase()}</em></>} description={note.description} /><section className="research-detail section-shell"><div className="research-detail__aside"><span>FIELD NOTE</span><span>VINCEY / 2026</span></div><article><p className="lead-paragraph">This page is a placeholder for a genuine research note. The structure is ready for a technical essay, a prototype log, or a documented lesson from a project.</p><p>When the material is ready, it will explain the question, the working hypothesis, the implementation or investigation, what changed along the way, and what remains unresolved.</p><RouteLink to="/research" className="text-link">Back to research <ArrowRight size={16} /></RouteLink></article></section></>
 }
 
 function ExperiencePage() {
@@ -752,7 +859,7 @@ function ContactPage() {
 function PresentationsPage() {
   const { documents } = usePortfolioContent()
   const presentations = documents.presentations || []
-  return <><InteriorHero scene="research" label="Talks, decks & shared thinking" number="05 / 07" title={<>Ideas worth<br /><em>showing.</em></>} description="A growing library of presentations and technical material from Vincent Nyakundi's work across software, cloud, security, and intelligent systems." /><section className="documents-page section-shell"><div className="documents-page__intro"><div><SectionLabel number="01 / 02">Current documents</SectionLabel><h2>Useful material,<br /><em>kept close.</em></h2></div><a className="button button--primary" href={documents.cv?.url || fallbackDocuments.cv.url} download><Download size={16} /> Download current CV</a></div>{presentations.length === 0 ? <div className="documents-empty"><Presentation size={28} /><h3>The presentation shelf is ready.</h3><p>New decks and talks will appear here when they are added through the private admin library.</p></div> : <div className="documents-grid">{presentations.map((document, index) => <article className="document-card reveal reveal--up" key={document.id} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="document-card__top"><span>0{index + 1} / PRESENTATION</span><Presentation size={18} /></div><h3>{document.title}</h3><p>{document.description || 'A presentation from the VINCEY technical archive.'}</p><div className="document-card__foot"><span>{document.fileName}</span><a className="arrow-link" href={document.url} target="_blank" rel="noreferrer">Open file <ArrowUpRight size={16} /></a></div></article>)}</div>}</section></>
+  return <><InteriorHero scene="research" image={interiorHeroImages.presentations} label="Talks, decks & shared thinking" number="05 / 07" title={<>Ideas worth<br /><em>showing.</em></>} description="A growing library of presentations and technical material from Vincent Nyakundi's work across software, cloud, security, and intelligent systems." /><section className="documents-page section-shell"><div className="documents-page__intro"><div><SectionLabel number="01 / 02">Current documents</SectionLabel><h2>Useful material,<br /><em>kept close.</em></h2></div><a className="button button--primary" href={documents.cv?.url || fallbackDocuments.cv.url} download><Download size={16} /> Download current CV</a></div>{presentations.length === 0 ? <div className="documents-empty"><Presentation size={28} /><h3>The presentation shelf is ready.</h3><p>New decks and talks will appear here when they are added through the private admin library.</p></div> : <div className="documents-grid">{presentations.map((document, index) => <article className="document-card reveal reveal--up" key={document.id} style={{ '--delay': `${index * 80}ms` } as CSSProperties}><div className="document-card__top"><span>0{index + 1} / PRESENTATION</span><Presentation size={18} /></div><h3>{document.title}</h3><p>{document.description || 'A presentation from the VINCEY technical archive.'}</p><div className="document-card__foot"><span>{document.fileName}</span><a className="arrow-link" href={document.url} target="_blank" rel="noreferrer">Open file <ArrowUpRight size={16} /></a></div></article>)}</div>}</section></>
 }
 
 type AdminProject = {
