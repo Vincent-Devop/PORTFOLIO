@@ -117,7 +117,7 @@ type RouteLinkProps = {
   ariaCurrent?: 'page'
 }
 
-const baseUrl = 'https://vincentnyakundi.com'
+const baseUrl = 'https://www.vincentnyakundi.co.ke'
 
 function navigate(to: string) {
   window.history.pushState({}, '', to)

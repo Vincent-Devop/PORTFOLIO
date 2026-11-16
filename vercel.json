@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/about", "destination": "/" },
+    { "source": "/expertise", "destination": "/" },
+    { "source": "/work", "destination": "/" },
+    { "source": "/work/:slug", "destination": "/" },
+    { "source": "/research", "destination": "/" },
+    { "source": "/research/:slug", "destination": "/" },
+    { "source": "/presentations", "destination": "/" },
+    { "source": "/experience", "destination": "/" },
+    { "source": "/contact", "destination": "/" },
+    { "source": "/admin", "destination": "/" }
+  ]
+}

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Sitemap: https://vincentnyakundi.com/sitemap.xml
+Sitemap: https://www.vincentnyakundi.co.ke/sitemap.xml
