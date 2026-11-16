@@ -1,0 +1,15 @@
+{
+  "routes": [
+    { "path": "/", "title": "VINCEY — Digital Engineering & Systems" },
+    { "path": "/about", "title": "About — VINCEY" },
+    { "path": "/expertise", "title": "Expertise — VINCEY" },
+    { "path": "/work", "title": "Work — VINCEY" },
+    { "path": "/work/:slug", "title": "Case Study — VINCEY" },
+    { "path": "/research", "title": "Research — VINCEY" },
+    { "path": "/research/:slug", "title": "Research Note — VINCEY" },
+    { "path": "/presentations", "title": "Presentations — VINCEY" },
+    { "path": "/experience", "title": "Experience — VINCEY" },
+    { "path": "/contact", "title": "Contact — VINCEY" },
+    { "path": "/admin", "title": "Admin — VINCEY" }
+  ]
+}
